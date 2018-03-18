@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+ path { stroke: white; stroke-width: 0.25px; fill: grey; }
+ div.tooltip {	
+    position: absolute;			
+    text-align: center;			
+    width: 60px;					
+    height: 28px;					
+    padding: 2px;				
+    font: 12px sans-serif;		
+    background: lightsteelblue;	
+    border: 0px;		
+    border-radius: 8px;			
+    pointer-events: none;			
+}
+</style>
+<body>
+    <script src="http://d3js.org/d3.v3.min.js"></script>
+    <script src="http://d3js.org/topojson.v0.min.js"></script>
+    <script>
+     var div = d3.select("body").append("div")	
+                 .attr("class", "tooltip")				
+                 .style("opacity", 0);
+     // Get your data wrangled
+     var data = null;
+     var rdata = {};
+     var u2w = {};
+     // Retrieve data function
+     function loadJSON (callback) {   
+         var xobj = new XMLHttpRequest();
+         xobj.overrideMimeType("application/json");
+         // Path to your file as served by your webserver
+         xobj.open ('GET', '/SOCCOMtracks.json', true); 
+         xobj.onreadystatechange = function () {
+             if (xobj.readyState == 4 && xobj.status == "200") {
+                 callback (xobj.responseText);
+             }
+         };
+         xobj.send (null);  
+     }
+     // Actually try to load the data
+     loadJSON (function (response) {
+         // Process the file into a valid JSON object
+         data = JSON.parse (response);
+         // Reprocess the data into a more friendly and useful format
+         var allpoints = [];
+         var pointmap = {};
+         var cnt = 0;
+         var colors = ["lightgray", "lightgreen", "lightskyblue",
+                       "lightcyan", "lightcoral", "lightsteelblue"];
+         var idx = 0;
+         data.forEach (function (d) {
+             for (var i = 0; i < d.LATS.length; i++) {
+                 if (d.LATS [i] && d.LONS [i]) {
+                     allpoints.push ({
+                         lat: d.LATS [i][0],
+                         lon: d.LONS [i][0] >= 180 ? d.LONS [i][0] - 360 : d.LONS [i][0],
+                         date: d.DATES [i],
+                         wmo: d.WMO,
+                         uwid: d.UWID,
+                         idx: i,
+                         len: d.LATS.length,
+                         cnt: cnt % 6
+                     });
+                     if (i == 0) {
+                         pointmap [d.WMO] = [idx];
+                     } else {
+                         pointmap [d.WMO].push (idx);
+                     }
+                     idx += 1;
+                 }
+             }
+             cnt += 1;
+         });
+         
+         // Draw some sort of map
+         var width = 960, height = 960;
+         var projection = d3.geo.azimuthalEqualArea()
+                            .scale(580)
+                            .rotate ([0,90])
+                            .translate([width/2, height/2])
+                            .precision (0.1);
+         var svg = d3.select("body").append("svg")
+                     .attr("width", width)
+                     .attr("height", height);
+         var path = d3.geo.path()
+                      .projection(projection);
+         var g = svg.append("g");
+
+         // load and display the World
+         d3.json("/world-110m2.json", function(error, topology) {
+             g.selectAll("path")
+              .data(topojson.object(topology, topology.objects.countries)
+                            .geometries)
+              .enter()
+              .append("path")
+              .attr("d", path);
+
+             // Do something here to load 'rdata' points cleverly
+             // into the map.  Extending this last is left to the reader.
+             g.selectAll("circle")
+		          .data (allpoints)
+                          .enter ()
+		          .append ("circle")
+		          .attr ("cx", function (d) {
+                              return projection ([
+                                  d.lon, d.lat
+                              ]) [0] ;
+                          })
+		          .attr ("cy",
+                                 function (d) {
+                                     return projection ([
+                                         d.lon,
+                                         d.lat
+                                     ]) [1] ;
+                                 })
+		          .attr ("r", function (d, i) {
+                              if (d.idx == 0) {
+                                  return "3px";
+                              } else {
+                                  return "1px";
+                              }
+                          })
+		          .attr ("fill",
+                                 function (d, i) {
+                                     if (d.idx == 0) {
+                                         if (d.date.endsWith ("2016") && d.len < 70) {
+                                             return "seagreen";
+                                         } else {
+                                             return "red";
+                                         }
+                                     } else {
+                                         return colors [d.cnt];
+                                     }
+                                 })
+                            .attr ("opacity", function (d, i) {
+                                if (d.idx == 0) {
+                                    return .8;
+                                } else {
+                                    return .5;
+                                }
+                            })
+                            .on ("mouseover", function (d, i) {
+                                if (d.idx == 0) {
+                                    div.transition ()
+                                       .duration (200)
+                                       .style ("opacity", .9);
+                                    div.html (
+                                        "<strong>" + d.date + "</strong><br/><strong>WMO</strong>: "
+                                      + d.wmo + "<br/><strong>UWID</strong>: " + d.uwid
+                                    )
+                                       .style (
+                                           "text-align", "left"
+                                       )
+                                       .style (
+                                           "left",
+                                           (projection ([d.lon,d.lat])[0]+10) + "px"
+                                       )
+                                       .style (
+                                           "top",
+                                           (projection ([d.lon,d.lat])[1]-50) + "px"
+                                       )
+                                       .style ("width", "100px").style ("height", "40px");
+                                    d3.select (this)
+                                      .attr ("fill", "orange")
+                                      .attr ("r", "6px")
+                                      .attr ("opacity", 0.5);
+                                    var wmopoints = [];
+                                    for (var k = 1; k < pointmap [d.wmo].length; k++) {
+                                        wmopoints.push (allpoints [pointmap [d.wmo][k]]);
+                                    }
+                                    g.selectAll ("circle")
+                                          .data (wmopoints)
+                                          .transition ()
+                                          .duration (function (d, i) {
+                                              return 100 + i * 30;
+                                          })
+                                          .attr ("cx",  function (e) {
+                                              return projection ([
+                                                  e.lon, e.lat
+                                              ]) [0] ;
+                                          })
+                                          .attr ("cy",  function (e) {
+                                              return projection ([
+                                                  e.lon, e.lat
+                                              ]) [1] ;
+                                          })
+                                          .attr ("fill", "black")
+                                          .attr ("r", "2px")
+                                          .attr ("opacity", 0.5);
+                                }
+                            })
+                            .on ("mouseout", function (d, i) {
+                                if (d.idx == 0) {
+                                    div.transition ()
+                                       .duration (500)
+                                       .style ("opacity", 0);
+                                    
+                                    if (d.date.endsWith ("2016") && d.len < 70) {
+                                        d3.select (this)
+                                          .attr ("fill", "seagreen")
+                                          .attr ("r", "3px")
+                                          .attr ("opacity", .9);
+                                    } else {
+                                        d3.select (this)
+                                          .attr ("fill", "red")
+                                          .attr ("r", "3px")
+                                          .attr ("opacity", .9);
+                                    }
+                                    var wmopoints = [];
+                                    for (var k = 1; k < pointmap [d.wmo].length; k++) {
+                                        wmopoints.push (allpoints [pointmap [d.wmo][k]]);
+                                    }
+                                    g.selectAll ("circle")
+                                          .data (wmopoints)
+                                          .attr ("cx",  function (e) {
+                                              return projection ([
+                                                  e.lon, e.lat
+                                              ]) [0] ;
+                                          })
+                                          .attr ("cy",  function (e) {
+                                              return projection ([
+                                                  e.lon, e.lat
+                                              ]) [1] ;
+                                          })
+                                          .attr ("fill", function (e, j) { return colors [e.cnt]; })
+                                          .attr ("r", "1px")
+                                          .attr ("opacity", 0.5);
+                                }
+                            });
+                                
+         });
+     });
+
+    </script>
+</body>
+</html>
