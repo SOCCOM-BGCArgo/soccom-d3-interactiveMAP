@@ -172,10 +172,6 @@
                                     }
                                     g.selectAll ("circle")
                                           .data (wmopoints)
-                                          .transition ()
-                                          .duration (function (d, i) {
-                                              return 100 + i * 30;
-                                          })
                                           .attr ("cx",  function (e) {
                                               return projection ([
                                                   e.lon, e.lat
