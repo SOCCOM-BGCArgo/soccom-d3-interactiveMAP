@@ -31,7 +31,7 @@
          var xobj = new XMLHttpRequest();
          xobj.overrideMimeType("application/json");
          // Path to your file as served by your webserver
-         xobj.open ('GET', '/data/SOCCOMtracks.json', true); 
+         xobj.open ('GET', 'https://adolfvonkleist.github.io/soccom-d3-eg/data/SOCCOMtracks.json', true); 
          xobj.onreadystatechange = function () {
              if (xobj.readyState == 4 && xobj.status == "200") {
                  callback (xobj.responseText);
@@ -89,7 +89,7 @@
          var g = svg.append("g");
 
          // load and display the World
-         d3.json("/data/world-110m2.json", function(error, topology) {
+         d3.json("https://adolfvonkleist.github.io/soccom-d3-eg/data/world-110m2.json", function(error, topology) {
              g.selectAll("path")
               .data(topojson.object(topology, topology.objects.countries)
                             .geometries)
