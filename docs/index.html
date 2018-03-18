@@ -31,7 +31,7 @@
          var xobj = new XMLHttpRequest();
          xobj.overrideMimeType("application/json");
          // Path to your file as served by your webserver
-         xobj.open ('GET', '/SOCCOMtracks.json', true); 
+         xobj.open ('GET', '/data/SOCCOMtracks.json', true); 
          xobj.onreadystatechange = function () {
              if (xobj.readyState == 4 && xobj.status == "200") {
                  callback (xobj.responseText);
