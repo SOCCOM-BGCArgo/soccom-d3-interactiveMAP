@@ -1,7 +1,7 @@
 # soccom-d3-eg
 Example using SOCCOM open source data and D3.js to graph sensor movements.
 
-- https://adolfvonkleist.github.io/soccom-d3-eg
+- https://tlmaurer.github.io/soccom-d3-eg
 
 ## USAGE:
 
