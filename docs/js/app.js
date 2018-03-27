@@ -1,0 +1,412 @@
+var div = d3.select("body").append("div")	
+    .attr("class", "tooltip")				
+    .style("opacity", 0);
+// Get your data wrangled
+var data = null;
+var rdata = {};
+var u2w = {};
+// Retrieve data function
+function loadJSON (callback) {   
+    var xobj = new XMLHttpRequest();
+    xobj.overrideMimeType("application/json");
+    // Path to your file as served by your webserver
+    xobj.open ('GET', 'https://tlmaurer.github.io/soccom-d3-eg/data/SOCCOMtracks.json', true); 
+    xobj.onreadystatechange = function () {
+        if (xobj.readyState == 4 && xobj.status == "200") {
+            callback (xobj.responseText);
+        }
+    };
+    xobj.send (null);  
+}
+
+// Actually try to load the data
+loadJSON (function (response) {
+    // Process the file into a valid JSON object
+    data = JSON.parse (response);
+    // Reprocess the data into a more friendly and useful format
+    var allpoints = [];
+    var pointmap = {};
+    var cnt = 0;
+    var colors = ["lightgray", "lightgreen", "lightskyblue",
+                  "lightcyan", "lightcoral", "lightsteelblue"];
+    var idx = 0;
+    data.forEach (function (d) {
+        for (var i = 0; i < d.LATS.length; i++) {
+            if (d.LATS [i] && d.LONS [i]) {
+                allpoints.push ({
+                    lat: d.LATS [i][0],
+                    lon: d.LONS [i][0] >= 180 ? d.LONS [i][0] - 360 : d.LONS [i][0],
+                    date: d.DATES [i],
+                    wmo: d.WMO,
+                    uwid: d.UWID,
+                    idx: i,
+                    len: d.LATS.length,
+                    cnt: cnt % 6
+                });
+                if (i == 0) {
+                    pointmap [d.WMO] = [idx];
+                } else {
+                    pointmap [d.WMO].push (idx);
+                }
+                idx += 1;
+            }
+        }
+        cnt += 1;
+    });
+    
+    // Draw some sort of map
+    var width = 960, height = 960;
+    var projection = d3.geo.stereographic()
+        .scale(700)
+        .rotate ([0,90])
+        .translate([width/2, height/2])
+	.clipAngle(180 - 1e-4)
+	.clipExtent([[0, 0], [width, height]])
+        .precision (0.1);
+
+    var drag = d3.behavior.drag()
+	.on("drag", function(d,i) {
+            d.x += d3.event.dx
+            d.y += d3.event.dy
+            d3.select(this).attr("transform", function(d,i){
+                return "translate(" + [ d.x,d.y ] + ")"
+            })
+        });
+    
+    var zoom = d3.behavior.zoom()
+	.translate([width / 2, height / 2])
+	.scale(700)
+	.scaleExtent([50, 3000])
+	.on("zoom", zoomed);
+    
+    var graticule = d3.geo.graticule();
+    
+    var svg = d3.select("body").append("svg")
+        .attr("width", width)
+        .attr("height", height);
+    var path = d3.geo.path()
+        .projection(projection);
+    var g = svg.append("g");
+    
+    svg
+	.call(drag)
+	.call(zoom)
+	.call(zoom.event);
+    
+    
+    g.append("path")
+	.datum(graticule)
+	.attr("class", "graticule")
+	.attr("d", path);
+
+    var dateformat = d3.time.format("%m/%d/%Y");
+    var today = new Date();
+    var current = d3.time.day.offset(today, -30);
+    
+    function zoomed() {
+	projection
+	    .translate(zoom.translate())
+	    .scale(zoom.scale())
+	
+	g.selectAll("path")
+	    .attr("d", path);
+	
+	g.append("path")
+	    .datum(graticule)
+	    .attr("class", "graticule")
+	    .attr("d", path);
+	
+	g.selectAll("circle")
+	    .attr("transform", function (d) {
+		return "translate(" + projection([d.Lon, d.Lat]) + ")";
+	    })
+	
+	    .attr ("cx", function (d) {
+                return projection ([
+                    d.lon, d.lat
+                ]) [0] ;
+            })
+	    .attr ("cy",
+                   function (d) {
+                       return projection ([
+                           d.lon,
+                           d.lat
+                       ]) [1] ;
+                   })
+	    .attr ("r", function (d, i) {
+                if (d.idx == d.len-1) {
+                    return "3px";
+                } else {
+                    return "1px";
+                }
+            })
+	    .attr ("fill",
+                   function (d, i) {
+                       if (d.idx == d.len-1) {
+                           if (Date.parse(today)-Date.parse(d.date) < 2592000000 ) { // 30 days.  there must be a smarter way to do this :-)
+                               return "seagreen";
+                           } else {
+                               return "red";
+                           }
+                       } else {
+                           //return colors [d.cnt];
+			   return "darkgray";
+                       }
+                   })
+            .attr ("opacity", function (d, i) {
+                if (d.idx == d.len-1) {
+                    return .8;
+                } else {
+                    return .5;
+                }
+            })
+            .on ("mouseover", function (d, i) {
+                if (d.idx == d.len-1) {
+                    div.transition ()
+                        .duration (200)
+                        .style ("opacity", .9);
+                    div.html (
+                        "<strong>" + d.date + "</strong><br/><strong>WMO</strong>: "
+                            + d.wmo + "<br/><strong>UWID</strong>: " + d.uwid
+                    )
+                        .style (
+                            "text-align", "left"
+                        )
+                        .style (
+                            "left",
+                            (projection ([d.lon,d.lat])[0]+10) + "px"
+                        )
+                        .style (
+                            "top",
+                            (projection ([d.lon,d.lat])[1]-50) + "px"
+                        )
+                        .style ("width", "100px").style ("height", "40px");
+                    d3.select (this)
+                        .attr ("fill", "orange")
+                        .attr ("r", "6px")
+                        .attr ("opacity", 0.5);
+                    var wmopoints = [];
+                    for (var k = 1; k < pointmap [d.wmo].length; k++) {
+                        wmopoints.push (allpoints [pointmap [d.wmo][k]]);
+                    }
+                    g.selectAll ("circle")
+                        .data (wmopoints)
+                        .attr ("cx",  function (e) {
+                            return projection ([
+                                e.lon, e.lat
+                            ]) [0] ;
+                        })
+                        .attr ("cy",  function (e) {
+                            return projection ([
+                                e.lon, e.lat
+                            ]) [1] ;
+                        })
+                        .attr ("fill", "darkgray")
+                        .attr ("r", "2px")
+                        .attr ("opacity", 0.5);
+                }
+            })
+            .on ("mouseout", function (d, i) {
+                if (d.idx == d.len-1) {
+                    div.transition ()
+                        .duration (500)
+                        .style ("opacity", 0);
+                    
+                    if (Date.parse(today)-Date.parse(d.date)<2592000000) {
+                        d3.select (this)
+                            .attr ("fill", "seagreen")
+                            .attr ("r", "3px")
+                            .attr ("opacity", .9);
+                    } else {
+                        d3.select (this)
+                            .attr ("fill", "red")
+                            .attr ("r", "3px")
+                            .attr ("opacity", .9);
+                    }
+                    var wmopoints = [];
+                    for (var k = 1; k < pointmap [d.wmo].length; k++) {
+                        wmopoints.push (allpoints [pointmap [d.wmo][k]]);
+                    }
+                    g.selectAll ("circle")
+                        .data (wmopoints)
+                        .attr ("cx",  function (e) {
+                            return projection ([
+                                e.lon, e.lat
+                            ]) [0] ;
+                        })
+                        .attr ("cy",  function (e) {
+                            return projection ([
+                                e.lon, e.lat
+                            ]) [1] ;
+                        })
+                        .attr ("fill", function (e, j) { return colors [e.cnt]; })
+                        .attr ("r", "1px")
+                        .attr ("opacity", 0.5);
+                }
+            });
+	
+    }
+
+    function searchfloatFunction() {
+	var wmoinput = document.getElementById("mySearch").value;
+	//NEED TO ADD CODE TO HIGHLIGHT FLOAT SELECTION.  USER SHOULD BE ABLE TO SEARCH BY WMO OR UWID.
+	
+    }
+    
+    // load and display the World
+    d3.json("https://tlmaurer.github.io/soccom-d3-eg/data/world-110m2.json", function(error, topology) {
+        g.selectAll("path",".graticule")
+            .data(topojson.object(topology, topology.objects.countries)
+                  .geometries)
+            .enter()
+            .append("path")
+            .attr("d", path);
+        // Do something here to load 'rdata' points cleverly
+        // into the map.  Extending this last is left to the reader.
+        g.selectAll("circle")
+	    .data (allpoints)
+            .enter ()
+	    .append ("circle")
+	    .attr ("cx", function (d) {
+                return projection ([
+                    d.lon, d.lat
+                ]) [0] ;
+            })
+	    .attr ("cy",
+                   function (d) {
+                       return projection ([
+                           d.lon,
+                           d.lat
+                       ]) [1] ;
+                   })
+	    .attr ("r", function (d, i) {
+                if (d.idx == d.len-1) {
+                    return "3px";
+                } else {
+                    return "1px";
+                }
+            })
+	    .attr ("fill",
+                   function (d, i) {
+                       if (d.idx == d.len-1) {
+                           if (Date.parse(today)-Date.parse(d.date) < 2592000000 ) {
+                               return "seagreen";
+                           } else {
+                               return "red";
+                           }
+                       } else {
+                           return "darkgray";
+                       }
+                   })
+            .attr ("opacity", function (d, i) {
+                if (d.idx == d.len-1) {
+                    return .8;
+                } else {
+                    return .5;
+                }
+            })
+            .on ("mouseover", function (d, i) {
+                if (d.idx == d.len-1) {
+                    div.transition ()
+                        .duration (200)
+                        .style ("opacity", .9);
+                    div.html (
+                        "<strong>" + d.date+ "</strong><br/><strong>WMO</strong>: "
+                            + d.wmo + "<br/><strong>UWID</strong>: " + d.uwid
+                    )
+                        .style (
+                            "text-align", "left"
+                        )
+                        .style (
+                            "left",
+                            (projection ([d.lon,d.lat])[0]+10) + "px"
+                        )
+                        .style (
+                            "top",
+                            (projection ([d.lon,d.lat])[1]-50) + "px"
+                        )
+                        .style ("width", "100px").style ("height", "40px");
+                    d3.select (this)
+                        .attr ("fill", "orange")
+                        .attr ("r", "6px")
+                        .attr ("opacity", 0.5);
+                    var wmopoints = [];
+                    for (var k = 1; k < pointmap [d.wmo].length; k++) {
+                        wmopoints.push (allpoints [pointmap [d.wmo][k]]);
+                    }
+                    g.selectAll ("circle")
+                        .data (wmopoints)
+                        .attr ("cx",  function (e) {
+                            return projection ([
+                                e.lon, e.lat
+                            ]) [0] ;
+                        })
+                        .attr ("cy",  function (e) {
+                            return projection ([
+                                e.lon, e.lat
+                            ]) [1] ;
+                        })
+                        .attr ("fill", "darkgray")
+                        .attr ("r", "2px")
+                        .attr ("opacity", 0.5);
+                }
+            })
+            .on ("mouseout", function (d, i) {
+                if (d.idx == d.len-1) {
+                    div.transition ()
+                        .duration (500)
+                        .style ("opacity", 0);
+                    
+                    if (Date.parse(today)-Date.parse(d.date)<2592000000) {
+                        d3.select (this)
+                            .attr ("fill", "seagreen")
+                            .attr ("r", "3px")
+                            .attr ("opacity", .9);
+                    } else {
+                        d3.select (this)
+                            .attr ("fill", "red")
+                            .attr ("r", "3px")
+                            .attr ("opacity", .9);
+                    }
+                    var wmopoints = [];
+                    for (var k = 1; k < pointmap [d.wmo].length; k++) {
+                        wmopoints.push (allpoints [pointmap [d.wmo][k]]);
+                    }
+                    g.selectAll ("circle")
+                        .data (wmopoints)
+                        .attr ("cx",  function (e) {
+                            return projection ([
+                                e.lon, e.lat
+                            ]) [0] ;
+                        })
+                        .attr ("cy",  function (e) {
+                            return projection ([
+                                e.lon, e.lat
+                            ]) [1] ;
+                        })
+                        .attr ("fill", function (e, j) { return colors [e.cnt]; })
+                        .attr ("r", "1px")
+                        .attr ("opacity", 0.5);
+                }
+            });
+        
+    });
+});
+var ordinal = d3.scale.ordinal()
+    .domain(["Active float", "Inactive float"])
+    .range(["seagreen", "red"]);
+
+var legsvg = d3.select("#legend").append("svg");
+
+legsvg.append("g")
+    .attr("class", "legendfloat")
+    .attr("transform", "translate(20,20)");
+
+var legendflt = d3.legend.color()
+    .shape("path", d3.svg.symbol().type("circle").size(100)())
+    .shapePadding(10)
+    .scale(ordinal);
+
+legsvg.select(".legendfloat")
+    .call(legendflt);	
+
