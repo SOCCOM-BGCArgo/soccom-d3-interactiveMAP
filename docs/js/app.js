@@ -247,8 +247,58 @@ loadJSON (function (response) {
 	
     }
 
-    function searchfloatFunction() {
+	function searchfloatFunction(d, i) {
 	var wmoinput = document.getElementById("mySearch").value;
+		function checkSearchBox(userwmo) {
+			return userwmo = wmoinput;
+			}
+		wmoobjindex = [d.wmo].findIndex(checkSearchBox);
+		if (i == wmoobjindex) {
+		 if (d.idx == d.len-1) {
+								div.transition ()
+								   .duration (200)
+								   .style ("opacity", .9);
+								div.html (
+									"<strong>" + d.date + "</strong><br/><strong>WMO</strong>: "
+								  + d.wmo + "<br/><strong>UWID</strong>: " + d.uwid
+								)
+								   .style (
+									   "text-align", "left"
+								   )
+								   .style (
+									   "left",
+									   (projection ([d.lon,d.lat])[0]+10) + "px"
+								   )
+								   .style (
+									   "top",
+									   (projection ([d.lon,d.lat])[1]-50) + "px"
+								   )
+								   .style ("width", "100px").style ("height", "40px");
+								d3.select (this)
+								  .attr ("fill", "orange")
+								  .attr ("r", "6px")
+								  .attr ("opacity", 0.5);
+								var wmopoints = [];
+								for (var k = 1; k < pointmap [d.wmo].length; k++) {
+									wmopoints.push (allpoints [pointmap [d.wmo][k]]);
+								}
+								g.selectAll ("circle")
+									  .data (wmopoints)
+									  .attr ("cx",  function (e) {
+										  return projection ([
+											  e.lon, e.lat
+										  ]) [0] ;
+									  })
+									  .attr ("cy",  function (e) {
+										  return projection ([
+											  e.lon, e.lat
+										  ]) [1] ;
+									  })
+									  .attr ("fill", "darkgray")
+									  .attr ("r", "2px")
+									  .attr ("opacity", 0.5);
+							}
+								}
 	//NEED TO ADD CODE TO HIGHLIGHT FLOAT SELECTION.  USER SHOULD BE ABLE TO SEARCH BY WMO OR UWID.
 	
     }
