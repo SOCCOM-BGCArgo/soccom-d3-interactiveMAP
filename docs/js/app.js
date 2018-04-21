@@ -19,13 +19,59 @@ function loadJSON (callback) {
     xobj.send (null);  
 }
 
+
+/*
+  All this stuff needs global scope to work.  
+  There is definitely a better way to do all this though!
+*/
+var g = null;
+var projection = null;
+var pointmap = {};
+var allpoints = [];
+var searchFloatFunction = function (d, i) {
+    var wmoinput = document.getElementById("mySearch").value;
+    var wmopoints = [];
+    for (var k = 0; k < pointmap [wmoinput].length; k++) {
+        wmopoints.push (allpoints [pointmap [wmoinput][k]]);
+    }
+
+    g.selectAll ("circle")
+        .data (wmopoints)
+        .attr ("cx",  function (e) {
+            return projection ([
+                e.lon, e.lat
+            ]) [0] ;
+        })
+        .attr ("cy",  function (e) {
+            return projection ([
+                e.lon, e.lat
+            ]) [1] ;
+        })
+        .attr ("fill", function (e, i) {
+            if (e.idx == e.len-1) {
+                return "green";
+            } else {
+                return "purple";
+            }
+        })
+        .attr ("r", function (e, i) {
+            if (e.idx == e.len-1) {
+                return "8px";
+            } else {
+                return "2px";
+            }
+        })
+        .attr ("opacity", 0.5);
+
+    return;
+}
+
+
 // Actually try to load the data
 loadJSON (function (response) {
     // Process the file into a valid JSON object
     data = JSON.parse (response);
     // Reprocess the data into a more friendly and useful format
-    var allpoints = [];
-    var pointmap = {};
     var cnt = 0;
     var colors = ["lightgray", "lightgreen", "lightskyblue",
                   "lightcyan", "lightcoral", "lightsteelblue"];
@@ -56,7 +102,7 @@ loadJSON (function (response) {
     
     // Draw some sort of map
     var width = 960, height = 960;
-    var projection = d3.geo.stereographic()
+    projection = d3.geo.stereographic()
         .scale(700)
         .rotate ([0,90])
         .translate([width/2, height/2])
@@ -86,7 +132,7 @@ loadJSON (function (response) {
         .attr("height", height);
     var path = d3.geo.path()
         .projection(projection);
-    var g = svg.append("g");
+    g = svg.append("g");
     
     svg
 	.call(drag)
@@ -189,6 +235,7 @@ loadJSON (function (response) {
                     for (var k = 1; k < pointmap [d.wmo].length; k++) {
                         wmopoints.push (allpoints [pointmap [d.wmo][k]]);
                     }
+
                     g.selectAll ("circle")
                         .data (wmopoints)
                         .attr ("cx",  function (e) {
@@ -247,61 +294,6 @@ loadJSON (function (response) {
 	
     }
 
-	function searchfloatFunction(d, i) {
-	var wmoinput = document.getElementById("mySearch").value;
-		function checkSearchBox(userwmo) {
-			return userwmo = wmoinput;
-			}
-		wmoobjindex = [d.wmo].findIndex(checkSearchBox);
-		if (i == wmoobjindex) {
-		 if (d.idx == d.len-1) {
-								div.transition ()
-								   .duration (200)
-								   .style ("opacity", .9);
-								div.html (
-									"<strong>" + d.date + "</strong><br/><strong>WMO</strong>: "
-								  + d.wmo + "<br/><strong>UWID</strong>: " + d.uwid
-								)
-								   .style (
-									   "text-align", "left"
-								   )
-								   .style (
-									   "left",
-									   (projection ([d.lon,d.lat])[0]+10) + "px"
-								   )
-								   .style (
-									   "top",
-									   (projection ([d.lon,d.lat])[1]-50) + "px"
-								   )
-								   .style ("width", "100px").style ("height", "40px");
-								d3.select (this)
-								  .attr ("fill", "orange")
-								  .attr ("r", "6px")
-								  .attr ("opacity", 0.5);
-								var wmopoints = [];
-								for (var k = 1; k < pointmap [d.wmo].length; k++) {
-									wmopoints.push (allpoints [pointmap [d.wmo][k]]);
-								}
-								g.selectAll ("circle")
-									  .data (wmopoints)
-									  .attr ("cx",  function (e) {
-										  return projection ([
-											  e.lon, e.lat
-										  ]) [0] ;
-									  })
-									  .attr ("cy",  function (e) {
-										  return projection ([
-											  e.lon, e.lat
-										  ]) [1] ;
-									  })
-									  .attr ("fill", "darkgray")
-									  .attr ("r", "2px")
-									  .attr ("opacity", 0.5);
-							}
-								}
-	//NEED TO ADD CODE TO HIGHLIGHT FLOAT SELECTION.  USER SHOULD BE ABLE TO SEARCH BY WMO OR UWID.
-	
-    }
     
     // load and display the World
     d3.json("https://tlmaurer.github.io/soccom-d3-eg/data/world-110m2.json", function(error, topology) {
@@ -442,6 +434,7 @@ loadJSON (function (response) {
         
     });
 });
+
 var ordinal = d3.scale.ordinal()
     .domain(["Active float", "Inactive float"])
     .range(["seagreen", "red"]);
