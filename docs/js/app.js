@@ -10,7 +10,8 @@ function loadJSON (callback) {
     var xobj = new XMLHttpRequest();
     xobj.overrideMimeType("application/json");
     // Path to your file as served by your webserver
-    xobj.open ('GET', 'https://tlmaurer.github.io/soccom-d3-eg/data/SOCCOMtracks.json', true); 
+   xobj.open ('GET', 'https://tlmaurer.github.io/soccom-d3-eg/data/SOCCOMtracks.json', true); 
+   //   xobj.open ('GET', 'data/SOCCOMtracks.json', true); 
     xobj.onreadystatechange = function () {
         if (xobj.readyState == 4 && xobj.status == "200") {
             callback (xobj.responseText);
@@ -219,7 +220,7 @@ loadJSON (function (response) {
             .on ("mouseover", function (d, i) {
                 if (d.idx == d.len-1) {
                     div.transition ()
-                        .duration (50)
+                        .duration (1000)
                         .style ("opacity", .9);
                     div.html (
                         "<strong>WMO</strong>: " + d.wmo  
@@ -272,7 +273,7 @@ loadJSON (function (response) {
             .on ("mouseout", function (d, i) {
                 if (d.idx == d.len-1) {
                     div.transition ()
-                        .duration (500)
+                        .duration (1000)
                         .style ("opacity", 0);
                     
                     if (Date.parse(today)-Date.parse(d.date)<2592000000) {
@@ -307,6 +308,28 @@ loadJSON (function (response) {
                         .attr ("opacity", 0.5);
                 }
             });
+	//d3.csv("data/dailyseaice.csv", function (data) {
+		d3.csv("https://tlmaurer.github.io/soccom-d3-eg/data/dailyseaice.csv", function (data) {			var icecoords = [];
+			for (var i = 0, len = data.length - 1; i <= len; i++) {
+				icecoords.push([data[i].Lon, data[i].Lat]);
+			}
+
+			var icepoly = [];
+			icepoly.push({
+				type: "LineString",
+				coordinates: icecoords,
+			});
+
+			var iceArcs = g.selectAll(".ice")
+				.data(icepoly)
+				.enter().append("path")
+				.style("fill", "#A9CCE3")
+				.style("opacity", 0.3)
+				.style("stroke", "#A9CCE3")
+				.style("stroke-width", 2)
+				.attr("d", path)
+				.text("Median ice extent");
+		});
 	
     }
 
@@ -366,7 +389,7 @@ loadJSON (function (response) {
             .on ("mouseover", function (d, i) {
                 if (d.idx == d.len-1) {
                     div.transition ()
-                        .duration (50)
+                        .duration (1000)
                         .style ("opacity", .9);
                     div.html (
                         "<strong>WMO</strong>: " + d.wmo  
@@ -419,7 +442,7 @@ loadJSON (function (response) {
             .on ("mouseout", function (d, i) {
                 if (d.idx == d.len-1) {
                     div.transition ()
-                        .duration (500)
+                        .duration (1000)
                         .style ("opacity", 0);
                     
                     if (Date.parse(today)-Date.parse(d.date)<2592000000) {
@@ -456,11 +479,35 @@ loadJSON (function (response) {
             });
         
     });
+	
+	//d3.csv("data/dailyseaice.csv", function (data) {
+	d3.csv("https://tlmaurer.github.io/soccom-d3-eg/data/dailyseaice.csv", function (data) {
+		var icecoords = [];
+		for (var i = 0, len = data.length - 1; i <= len; i++) {
+			icecoords.push([data[i].Lon, data[i].Lat]);
+		}
+
+		var icepoly = [];
+		icepoly.push({
+			type: "LineString",
+			coordinates: icecoords,
+		});
+
+		var iceArcs = g.selectAll(".ice")
+			.data(icepoly)
+			.enter().append("path")
+			.style("fill", "#A9CCE3")
+			.style("opacity", 0.3)
+			.style("stroke", "#A9CCE3")
+			.style("stroke-width", 2)
+			.attr("d", path)
+			.text("Median ice extent");
+	});
 });
 
 var ordinal = d3.scale.ordinal()
-    .domain(["Active float", "Inactive float"])
-    .range(["seagreen", "red"]);
+    .domain(["Active float", "Inactive float", "USNIC daily ice edge"])
+    .range(["seagreen", "red", "#A9CCE3"]);
 
 var legsvg = d3.select("#legend").append("svg");
 
