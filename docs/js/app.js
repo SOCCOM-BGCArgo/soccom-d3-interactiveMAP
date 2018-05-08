@@ -27,14 +27,22 @@ function loadJSON (callback) {
 var g = null;
 var projection = null;
 var pointmap = {};
+var pointuw = {};
 var allpoints = [];
+var e = [];
 var searchFloatFunction = function (d, i) {
     var wmoinput = document.getElementById("mySearch").value;
-    var wmopoints = [];
-    for (var k = 0; k < pointmap [wmoinput].length; k++) {
-        wmopoints.push (allpoints [pointmap [wmoinput][k]]);
-    }
-
+	var wmopoints = [];
+	if (wmoinput > 1000000) {
+		for (var k = 0; k < pointmap [wmoinput].length; k++) {
+			wmopoints.push (allpoints [pointmap [wmoinput][k]]);
+		}
+	} else {
+		for (var k = 0; k < pointuw [wmoinput].length; k++) {
+			wmopoints.push (allpoints [pointuw [wmoinput][k]]);
+		}
+	}		
+	
     g.selectAll ("circle")
         .data (wmopoints)
         .attr ("cx",  function (e) {
@@ -49,7 +57,7 @@ var searchFloatFunction = function (d, i) {
         })
         .attr ("fill", function (e, i) {
             if (e.idx == e.len-1) {
-                return "green";
+                return "orange";
             } else {
                 return "purple";
             }
@@ -91,8 +99,10 @@ loadJSON (function (response) {
                 });
                 if (i == 0) {
                     pointmap [d.WMO] = [idx];
+					pointuw [d.UWID] = [idx];
                 } else {
                     pointmap [d.WMO].push (idx);
+					pointuw [d.UWID].push (idx);
                 }
                 idx += 1;
             }
@@ -181,7 +191,7 @@ loadJSON (function (response) {
                    })
 	    .attr ("r", function (d, i) {
                 if (d.idx == d.len-1) {
-                    return "3px";
+                    return "4px";
                 } else {
                     return "1px";
                 }
@@ -209,11 +219,18 @@ loadJSON (function (response) {
             .on ("mouseover", function (d, i) {
                 if (d.idx == d.len-1) {
                     div.transition ()
-                        .duration (200)
+                        .duration (50)
                         .style ("opacity", .9);
                     div.html (
-                        "<strong>" + d.date + "</strong><br/><strong>WMO</strong>: "
-                            + d.wmo + "<br/><strong>UWID</strong>: " + d.uwid
+                        "<strong>WMO</strong>: " + d.wmo  
+                            + "<br/><strong>UWID</strong>: " + d.uwid
+							+ "<br/><strong>last lat</strong>: " + d.lat
+							+ "<br/><strong>last lon</strong>: " + d.lon
+							+ "<br/><strong>last date:" + d.date
+							+ "<br/><strong>Download QC data: <a target='_blank' href= 'https://www3.mbari.org/lobo/Data/FloatVizData/qc/' + mbariID + 'QC.txt'>ODVtext" + 
+                            '</a>'  +
+                            ', <a target="_blank" href= "ftp://ftp.ifremer.fr/ifremer/argo/dac/aoml/' + d.wmo + '/' + d.wmo + '_Mprof.nc">ARGOnetcdf' + 
+                            "</a>"
                     )
                         .style (
                             "text-align", "left"
@@ -224,9 +241,9 @@ loadJSON (function (response) {
                         )
                         .style (
                             "top",
-                            (projection ([d.lon,d.lat])[1]-50) + "px"
+                            (projection ([d.lon,d.lat])[1]-90) + "px"
                         )
-                        .style ("width", "100px").style ("height", "40px");
+                        .style ("width", "250px").style ("height", "85px");
                     d3.select (this)
                         .attr ("fill", "orange")
                         .attr ("r", "6px")
@@ -235,7 +252,6 @@ loadJSON (function (response) {
                     for (var k = 1; k < pointmap [d.wmo].length; k++) {
                         wmopoints.push (allpoints [pointmap [d.wmo][k]]);
                     }
-
                     g.selectAll ("circle")
                         .data (wmopoints)
                         .attr ("cx",  function (e) {
@@ -248,7 +264,7 @@ loadJSON (function (response) {
                                 e.lon, e.lat
                             ]) [1] ;
                         })
-                        .attr ("fill", "darkgray")
+                        .attr ("fill", "purple")
                         .attr ("r", "2px")
                         .attr ("opacity", 0.5);
                 }
@@ -262,12 +278,12 @@ loadJSON (function (response) {
                     if (Date.parse(today)-Date.parse(d.date)<2592000000) {
                         d3.select (this)
                             .attr ("fill", "seagreen")
-                            .attr ("r", "3px")
+                            .attr ("r", "4px")
                             .attr ("opacity", .9);
                     } else {
                         d3.select (this)
                             .attr ("fill", "red")
-                            .attr ("r", "3px")
+                            .attr ("r", "4px")
                             .attr ("opacity", .9);
                     }
                     var wmopoints = [];
@@ -323,7 +339,7 @@ loadJSON (function (response) {
                    })
 	    .attr ("r", function (d, i) {
                 if (d.idx == d.len-1) {
-                    return "3px";
+                    return "4px";
                 } else {
                     return "1px";
                 }
@@ -350,11 +366,18 @@ loadJSON (function (response) {
             .on ("mouseover", function (d, i) {
                 if (d.idx == d.len-1) {
                     div.transition ()
-                        .duration (200)
+                        .duration (50)
                         .style ("opacity", .9);
                     div.html (
-                        "<strong>" + d.date+ "</strong><br/><strong>WMO</strong>: "
-                            + d.wmo + "<br/><strong>UWID</strong>: " + d.uwid
+                        "<strong>WMO</strong>: " + d.wmo  
+                            + "<br/><strong>UWID</strong>: " + d.uwid
+							+ "<br/><strong>last lat</strong>: " + d.lat
+							+ "<br/><strong>last lon</strong>: " + d.lon
+							+ "<br/><strong>last date:" + d.date
+							+ "<br/><strong>Download QC data: <a target='_blank' href= 'https://www3.mbari.org/lobo/Data/FloatVizData/qc/' + mbariID + 'QC.txt'>ODVtext" + 
+                            '</a>'  +
+                            ', <a target="_blank" href= "ftp://ftp.ifremer.fr/ifremer/argo/dac/aoml/' + d.wmo + '/' + d.wmo + '_Mprof.nc">ARGOnetcdf' + 
+                            "</a>"
                     )
                         .style (
                             "text-align", "left"
@@ -365,9 +388,9 @@ loadJSON (function (response) {
                         )
                         .style (
                             "top",
-                            (projection ([d.lon,d.lat])[1]-50) + "px"
+                            (projection ([d.lon,d.lat])[1]-90) + "px"
                         )
-                        .style ("width", "100px").style ("height", "40px");
+                        .style ("width", "250px").style ("height", "85px");
                     d3.select (this)
                         .attr ("fill", "orange")
                         .attr ("r", "6px")
@@ -388,7 +411,7 @@ loadJSON (function (response) {
                                 e.lon, e.lat
                             ]) [1] ;
                         })
-                        .attr ("fill", "darkgray")
+                        .attr ("fill", "purple")
                         .attr ("r", "2px")
                         .attr ("opacity", 0.5);
                 }
@@ -402,12 +425,12 @@ loadJSON (function (response) {
                     if (Date.parse(today)-Date.parse(d.date)<2592000000) {
                         d3.select (this)
                             .attr ("fill", "seagreen")
-                            .attr ("r", "3px")
+                            .attr ("r", "4px")
                             .attr ("opacity", .9);
                     } else {
                         d3.select (this)
                             .attr ("fill", "red")
-                            .attr ("r", "3px")
+                            .attr ("r", "4px")
                             .attr ("opacity", .9);
                     }
                     var wmopoints = [];
