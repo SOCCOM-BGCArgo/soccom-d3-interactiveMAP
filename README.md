@@ -1,5 +1,5 @@
 # soccom-d3-eg
-Example using SOCCOM open source data and D3.js to graph sensor movements.
+Example using SOCCOM open source data and D3.js to plot float tracks.
 
 - https://tlmaurer.github.io/soccom-d3-eg
 
