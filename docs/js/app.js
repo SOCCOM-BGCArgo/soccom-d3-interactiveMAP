@@ -220,7 +220,7 @@ loadJSON (function (response) {
             .on ("mouseover", function (d, i) {
                 if (d.idx == d.len-1) {
                     div.transition ()
-                        .duration (1000)
+                        .duration (100)
                         .style ("opacity", .9);
                     div.html (
                         "<strong>WMO</strong>: " + d.wmo  
@@ -228,8 +228,8 @@ loadJSON (function (response) {
 							+ "<br/><strong>last lat</strong>: " + d.lat
 							+ "<br/><strong>last lon</strong>: " + d.lon
 							+ "<br/><strong>last date:" + d.date
-							+ "<br/><strong>Download QC data: <a target='_blank' href= 'https://www3.mbari.org/lobo/Data/FloatVizData/qc/' + mbariID + 'QC.txt'>ODVtext" + 
-                            '</a>'  +
+							+ "<br/><strong>Download QC data:" + '<a target="_blank" href= "https://www3.mbari.org/lobo/Data/FloatVizData/qc/' + d.uwid + 'SOOCNQC.txt">ODVtext' + 
+                            "</a>"  +
                             ', <a target="_blank" href= "ftp://ftp.ifremer.fr/ifremer/argo/dac/aoml/' + d.wmo + '/' + d.wmo + '_Mprof.nc">ARGOnetcdf' + 
                             "</a>"
                     )
@@ -273,7 +273,7 @@ loadJSON (function (response) {
             .on ("mouseout", function (d, i) {
                 if (d.idx == d.len-1) {
                     div.transition ()
-                        .duration (1000)
+                        .duration (2500)
                         .style ("opacity", 0);
                     
                     if (Date.parse(today)-Date.parse(d.date)<2592000000) {
@@ -389,7 +389,7 @@ loadJSON (function (response) {
             .on ("mouseover", function (d, i) {
                 if (d.idx == d.len-1) {
                     div.transition ()
-                        .duration (1000)
+                        .duration (100)
                         .style ("opacity", .9);
                     div.html (
                         "<strong>WMO</strong>: " + d.wmo  
@@ -397,8 +397,8 @@ loadJSON (function (response) {
 							+ "<br/><strong>last lat</strong>: " + d.lat
 							+ "<br/><strong>last lon</strong>: " + d.lon
 							+ "<br/><strong>last date:" + d.date
-							+ "<br/><strong>Download QC data: <a target='_blank' href= 'https://www3.mbari.org/lobo/Data/FloatVizData/qc/' + mbariID + 'QC.txt'>ODVtext" + 
-                            '</a>'  +
+							+ "<br/><strong>Download QC data:" + '<a target="_blank" href= "https://www3.mbari.org/lobo/Data/FloatVizData/qc/' + d.uwid + 'SOOCNQC.txt">ODVtext' + 
+                            "</a>"  +
                             ', <a target="_blank" href= "ftp://ftp.ifremer.fr/ifremer/argo/dac/aoml/' + d.wmo + '/' + d.wmo + '_Mprof.nc">ARGOnetcdf' + 
                             "</a>"
                     )
@@ -442,7 +442,7 @@ loadJSON (function (response) {
             .on ("mouseout", function (d, i) {
                 if (d.idx == d.len-1) {
                     div.transition ()
-                        .duration (1000)
+                        .duration (2500)
                         .style ("opacity", 0);
                     
                     if (Date.parse(today)-Date.parse(d.date)<2592000000) {
