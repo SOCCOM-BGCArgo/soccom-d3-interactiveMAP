@@ -10,8 +10,8 @@ function loadJSON (callback) {
     var xobj = new XMLHttpRequest();
     xobj.overrideMimeType("application/json");
     // Path to your file as served by your webserver
-   xobj.open ('GET', 'https://SOCCOM-BGCArgo.github.io/soccom-d3-interactiveMAP/data/SOCCOMtracks.json', true); 
-   //   xobj.open ('GET', 'data/SOCCOMtracks.json', true); 
+  // xobj.open ('GET', 'https://SOCCOM-BGCArgo.github.io/soccom-d3-interactiveMAP/data/SOCCOMtracks.json', true); 
+     xobj.open ('GET', 'data/SOCCOMtracks.json', true); 
     xobj.onreadystatechange = function () {
         if (xobj.readyState == 4 && xobj.status == "200") {
             callback (xobj.responseText);
@@ -308,8 +308,8 @@ loadJSON (function (response) {
                         .attr ("opacity", 0.5);
                 }
             });
-	//d3.csv("data/dailyseaice.csv", function (data) {
-		d3.csv("https://SOCCOM-BGCArgo.github.io/soccom-d3-interactiveMAP/data/dailyseaice.csv", function (data) {			var icecoords = [];
+	        d3.csv("data/dailyseaice.csv", function (data) {
+	//	d3.csv("https://SOCCOM-BGCArgo.github.io/soccom-d3-interactiveMAP/data/dailyseaice.csv", function (data) {			var icecoords = [];
 			for (var i = 0, len = data.length - 1; i <= len; i++) {
 				icecoords.push([data[i].Lon, data[i].Lat]);
 			}
@@ -336,12 +336,24 @@ loadJSON (function (response) {
     
     // load and display the World
     d3.json("https://SOCCOM-BGCArgo.github.io/soccom-d3-interactiveMAP/data/world-110m2.json", function(error, topology) {
-        g.selectAll("path",".graticule")
+        g.selectAll("path", ".graticule")
+            .datum(topojson.object(topology, topology.objects.land))
+            .attr("class", "land")
+            .attr("d", path);
+			
+		g.selectAll("path",".graticule")
             .data(topojson.object(topology, topology.objects.countries)
                   .geometries)
             .enter()
             .append("path")
+			.attr("class", "boundary")
             .attr("d", path);
+			
+		g.append("path")
+			.datum(graticule)
+			.attr("class", "graticule")
+			.attr("d", path);
+			
         // Do something here to load 'rdata' points cleverly
         // into the map.  Extending this last is left to the reader.
         g.selectAll("circle")
@@ -480,8 +492,8 @@ loadJSON (function (response) {
         
     });
 	
-	//d3.csv("data/dailyseaice.csv", function (data) {
-	d3.csv("https://SOCCOM-BGCArgo.github.io/soccom-d3-interactiveMAP/data/dailyseaice.csv", function (data) {
+	d3.csv("data/dailyseaice.csv", function (data) {
+	//d3.csv("https://SOCCOM-BGCArgo.github.io/soccom-d3-interactiveMAP/data/dailyseaice.csv", function (data) {
 		var icecoords = [];
 		for (var i = 0, len = data.length - 1; i <= len; i++) {
 			icecoords.push([data[i].Lon, data[i].Lat]);
